@@ -14,7 +14,7 @@ func NewRecoverer() *Recoverer {
 	return &Recoverer{}
 }
 
-func (ct *Recoverer) handler(next http.Handler) http.Handler {
+func (ct *Recoverer) Handler(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if rvr := recover(); rvr != nil {

@@ -19,7 +19,7 @@ func NewCacheControl(maxAge int, private bool) *CacheControl {
 	return cc
 }
 
-func (cc *CacheControl) handler(next http.Handler) http.Handler {
+func (cc *CacheControl) Handler(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("cache-control", cc.value)
 		next.ServeHTTP(w, r)
