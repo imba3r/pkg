@@ -42,7 +42,7 @@ func (s *Service) LoadFromMemory(dest interface{}) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	err := json.Unmarshal(s.config, &dest)
+	err := json.Unmarshal(s.config, dest)
 	if err != nil {
 		return errors.Wrap(err, "could not unmarshal config file")
 	}
@@ -60,12 +60,12 @@ func (s *Service) LoadFromDisk(dest interface{}) error {
 		return errors.Wrap(err, "could not read file")
 	}
 
-	err = json.Unmarshal(bytes, &dest)
+	err = json.Unmarshal(bytes, dest)
 	if err != nil {
 		return errors.Wrap(err, "could not unmarshal config file")
 	}
 
-	s.config, err = json.Marshal(&dest)
+	s.config, err = json.Marshal(dest)
 	if err != nil {
 		return errors.Wrap(err, "could marshal config file")
 	}
