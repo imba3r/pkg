@@ -29,8 +29,7 @@ func NewService(cfgPath string, defaultConfig interface{}) (*Service, error) {
 		return nil, errors.Wrap(err, "could not read config file")
 	}
 
-	var fromDisk interface{}
-	err = s.LoadFromDisk(&fromDisk)
+	err = s.LoadFromDisk(defaultConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +65,10 @@ func (s *Service) LoadFromDisk(dest interface{}) error {
 		return errors.Wrap(err, "could not unmarshal config file")
 	}
 
-	s.config = bytes
+	s.config, err = json.Marshal(&dest)
+	if err != nil {
+		return errors.Wrap(err, "could marshal config file")
+	}
 	return nil
 }
 
