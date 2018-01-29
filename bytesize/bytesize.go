@@ -2,6 +2,7 @@ package bytesize
 
 import "fmt"
 
+// ByteSize is a float64.
 type ByteSize float64
 
 const (
@@ -16,6 +17,7 @@ const (
 	YB
 )
 
+// String returns a string representation of the given ByteSize.
 func (b ByteSize) String() string {
 	switch {
 	case b >= YB:
@@ -36,8 +38,4 @@ func (b ByteSize) String() string {
 		return fmt.Sprintf("%.2f KB", b/KB)
 	}
 	return fmt.Sprintf("%.0f B", b)
-}
-
-func main() {
-	fmt.Println(YB, ByteSize(1e13))
 }
