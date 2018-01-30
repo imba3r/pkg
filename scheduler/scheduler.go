@@ -1,6 +1,8 @@
 package scheduler
 
 import (
+	"fmt"
+	"net/http"
 	"sync"
 	"time"
 )
@@ -273,4 +275,23 @@ func (j *Job) error(msgFormat string, args ...interface{}) {
 	if j.Logger != nil {
 		j.Logger.Errorf(msgFormat, args...)
 	}
+}
+
+func (s *Service) Handler() http.Handler {
+	h := http.NewServeMux()
+
+	h.HandleFunc("/foo", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, "Hello, you hit foo!")
+	})
+
+	h.HandleFunc("/bar", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, "Hello, you hit bar!")
+	})
+
+	h.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(404)
+		fmt.Fprintln(w, "You're lost, go home")
+	})
+
+	return h
 }
