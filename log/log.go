@@ -99,42 +99,42 @@ func (l *Logger) Fatalf(msgFormat string, args ...interface{}) {
 
 // Info logs a info message.
 func Info(msg string) {
-	getInstance().Info(msg)
+	GetInstance().Info(msg)
 }
 
 // Infof logs a formatted info message.
 func Infof(msgFormat string, args ...interface{}) {
-	getInstance().Infof(msgFormat, args...)
+	GetInstance().Infof(msgFormat, args...)
 }
 
 // Warn logs a warning message.
 func Warn(msg string) {
-	getInstance().Warn(msg)
+	GetInstance().Warn(msg)
 }
 
 // Warnf logs a formatted warning message.
 func Warnf(msgFormat string, args ...interface{}) {
-	getInstance().Warnf(msgFormat, args...)
+	GetInstance().Warnf(msgFormat, args...)
 }
 
 // Error logs a error message.
 func Error(msg string) {
-	getInstance().Error(msg)
+	GetInstance().Error(msg)
 }
 
 // Errorf logs a formatted error message.
 func Errorf(msgFormat string, args ...interface{}) {
-	getInstance().Errorf(msgFormat, args...)
+	GetInstance().Errorf(msgFormat, args...)
 }
 
 // Fatal logs a fatal message.
 func Fatal(msg string) {
-	getInstance().Fatal(msg)
+	GetInstance().Fatal(msg)
 }
 
 // Fatalf logs a formatted fatal message.
 func Fatalf(msgFormat string, args ...interface{}) {
-	getInstance().Fatalf(msgFormat, args...)
+	GetInstance().Fatalf(msgFormat, args...)
 }
 
 func createWriter(writers []io.Writer) io.Writer {
@@ -144,9 +144,11 @@ func createWriter(writers []io.Writer) io.Writer {
 	return io.MultiWriter(writers...)
 }
 
-func getInstance() *Logger {
+func GetInstance() *Logger {
 	once.Do(func() {
-		logger = NewLogger(nil)
+		if logger == nil {
+			logger = NewLogger(nil)
+		}
 	})
 	return logger
 }

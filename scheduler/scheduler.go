@@ -3,8 +3,6 @@ package scheduler
 import (
 	"sync"
 	"time"
-
-	"github.com/imba3r/grabber/core/log"
 )
 
 // Task interface describes a runnable task.
@@ -14,11 +12,20 @@ type Task interface {
 	Name() string
 }
 
+// Logger interface describes the kind of logger we'd like to have.
+type Logger interface {
+	Infof(msgFormat string, args ...interface{})
+	Errorf(msgFormat string, args ...interface{})
+}
+
 // Job struct contains all relevant data start,
 // identify and communicate with a Enabled task.
 type Job struct {
 	// The task..
 	Task
+
+	// Logger..
+	Logger
 
 	// Communication with the go routine.
 	interval chan time.Duration
@@ -40,9 +47,11 @@ type Job struct {
 }
 
 // NewJob creates a new job for the given task, name and duration.
-func NewJob(task Task, interval time.Duration) *Job {
+// It accepts an optional logger, if that is nil the job will be quiet.
+func NewJob(task Task, logger Logger, interval time.Duration) *Job {
 	job := &Job{
 		Task:        task,
+		Logger:      logger,
 		interval:    make(chan time.Duration, 1),
 		stop:        make(chan struct{}),
 		runNow:      make(chan struct{}),
@@ -172,13 +181,13 @@ func (s State) String() string {
 
 func (j *Job) run() {
 	if j.State() == Disabled {
-		log.Infof("JOB=%s Job is disabled.", j.Name())
+		j.info("JOB=%s Job is disabled.", j.Name())
 		return
 	}
 	select {
 	case j.semaphore <- 1:
 		j.wg.Add(1)
-		log.Infof("JOB=%s Starting task.", j.Name())
+		j.info("JOB=%s Starting task.", j.Name())
 
 		// Update the job meta data.
 		j.mutex.Lock()
@@ -193,9 +202,9 @@ func (j *Job) run() {
 			// Run the task!
 			err := j.Run()
 			if err != nil {
-				log.Errorf("JOB=%s Error during task execution: %v.", j.Name(), err)
+				j.error("JOB=%s Error during task execution: %v.", j.Name(), err)
 			} else {
-				log.Infof("JOB=%s Finished task.", j.Name())
+				j.info("JOB=%s Finished task.", j.Name())
 			}
 
 			j.mutex.Lock()
@@ -211,7 +220,7 @@ func (j *Job) run() {
 			<-j.semaphore
 		}()
 	default:
-		log.Infof("JOB=%s Task is still in progress.", j.Name())
+		j.info("JOB=%s Task is still in progress.", j.Name())
 	}
 }
 
@@ -221,17 +230,17 @@ func (j *Job) start() {
 	j.nextRun = time.Now().UTC().Add(j.curInterval)
 	j.mutex.Unlock()
 
-	log.Infof("JOB=%s Initialized... first run will be at %s.", j.Name(), j.NextRun().Format(time.RFC3339))
+	j.info("JOB=%s Initialized... first run will be at %s.", j.Name(), j.NextRun().Format(time.RFC3339))
 	for {
 		select {
 		case <-ticker.C:
-			log.Infof("JOB=%s Received timer trigger.", j.Name())
+			j.info("JOB=%s Received timer trigger.", j.Name())
 			j.run()
 		case <-j.runNow:
-			log.Infof("JOB=%s Received manual trigger.", j.Name())
+			j.info("JOB=%s Received manual trigger.", j.Name())
 			j.run()
 		case interval := <-j.interval:
-			log.Infof("JOB=%s Updating interval to %f minutes.", j.Name(), interval.Minutes())
+			j.info("JOB=%s Updating interval to %f minutes.", j.Name(), interval.Minutes())
 
 			// We have to stop the old ticker and create
 			// a new one in order to change the job interval.
@@ -243,7 +252,7 @@ func (j *Job) start() {
 			j.curInterval = interval
 			j.mutex.Unlock()
 		case <-j.stop:
-			log.Infof("JOB=%s Stopping job.", j.Name())
+			j.info("JOB=%s Stopping job.", j.Name())
 
 			// Stop the ticker and mark the main job go routine as done so
 			// that the blocking wait in the Stop() function can continue.
@@ -251,5 +260,17 @@ func (j *Job) start() {
 			j.wg.Done()
 			return
 		}
+	}
+}
+
+func (j *Job) info(msgFormat string, args ...interface{}) {
+	if j.Logger != nil {
+		j.Logger.Infof(msgFormat, args...)
+	}
+}
+
+func (j *Job) error(msgFormat string, args ...interface{}) {
+	if j.Logger != nil {
+		j.Logger.Errorf(msgFormat, args...)
 	}
 }

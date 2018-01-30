@@ -3,11 +3,11 @@ package jsonrpc
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io"
 	"math/rand"
 	"net/http"
-
-	"github.com/pkg/errors"
 )
 
 // Client represents a JSON RPC client.
@@ -33,14 +33,14 @@ func (c *Client) Call(method string, args interface{}, result interface{}) error
 	}
 	req, err := http.NewRequest("POST", c.rpcURL, bytes.NewBuffer(message))
 	if err != nil {
-		return errors.Wrap(err, "could not create request for rpc call")
+		return fmt.Errorf("could not create request for rpc call: %v", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 
 	// Do the request.
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return errors.Wrap(err, "error executing rpc request")
+		return fmt.Errorf("error executing rpc request: %v", err)
 	}
 	defer resp.Body.Close()
 
@@ -76,10 +76,10 @@ func encodeRequest(method string, args interface{}) ([]byte, error) {
 func decodeResponse(r io.Reader, reply interface{}) error {
 	var c response
 	if err := json.NewDecoder(r).Decode(&c); err != nil {
-		return errors.Wrap(err, "could not unmarshal json rpc response")
+		return fmt.Errorf("could not unmarshal json rpc response: %v", err)
 	}
 	if c.Error != nil {
-		return errors.Errorf("%v", c.Error)
+		return fmt.Errorf("%v", c.Error)
 	}
 	if c.Result == nil {
 		return errors.New("result is nil")

@@ -2,11 +2,10 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"sync"
-
-	"github.com/pkg/errors"
 )
 
 // Service struct gives access to the config file.
@@ -26,7 +25,7 @@ func NewService(cfgPath string, defaultConfig interface{}) (*Service, error) {
 	if os.IsNotExist(err) {
 		s.Save(defaultConfig)
 	} else if err != nil {
-		return nil, errors.Wrap(err, "could not read config file")
+		return nil, fmt.Errorf("could not read config file: %v", err)
 	}
 
 	err = s.LoadFromDisk(defaultConfig)
@@ -44,7 +43,7 @@ func (s *Service) LoadFromMemory(dest interface{}) error {
 
 	err := json.Unmarshal(s.config, dest)
 	if err != nil {
-		return errors.Wrap(err, "could not unmarshal config file")
+		return fmt.Errorf("could not unmarshal config file: %v", err)
 	}
 
 	return nil
@@ -57,17 +56,17 @@ func (s *Service) LoadFromDisk(dest interface{}) error {
 
 	bytes, err := ioutil.ReadFile(s.path)
 	if err != nil {
-		return errors.Wrap(err, "could not read file")
+		return fmt.Errorf("could not read file: %v", err)
 	}
 
 	err = json.Unmarshal(bytes, dest)
 	if err != nil {
-		return errors.Wrap(err, "could not unmarshal config file")
+		return fmt.Errorf("could not unmarshal config file: %v", err)
 	}
 
 	s.config, err = json.Marshal(dest)
 	if err != nil {
-		return errors.Wrap(err, "could marshal config file")
+		return fmt.Errorf("could marshal config file: %v", err)
 	}
 	return nil
 }
@@ -79,12 +78,12 @@ func (s *Service) Save(config interface{}) error {
 
 	bytes, err := json.Marshal(&config)
 	if err != nil {
-		return errors.Wrap(err, "could not marshal config file")
+		return fmt.Errorf("could marshal config file: %v", err)
 	}
 
 	err = ioutil.WriteFile(s.path, bytes, 0644)
 	if err != nil {
-		return errors.Wrap(err, "could write config file to disk")
+		return fmt.Errorf("could write config file to disk: %v", err)
 	}
 
 	s.config = bytes
