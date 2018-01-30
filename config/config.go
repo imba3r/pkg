@@ -64,6 +64,8 @@ func (s *Service) LoadFromDisk(dest interface{}) error {
 		return fmt.Errorf("could not unmarshal config file: %v", err)
 	}
 
+	// Marshal the the config back to make sure the version in-memory
+	// contains everything - the file on disk doesn't need to.
 	s.config, err = json.Marshal(dest)
 	if err != nil {
 		return fmt.Errorf("could marshal config file: %v", err)
